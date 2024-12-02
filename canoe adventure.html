@@ -1,0 +1,874 @@
+<html><head><base href="." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom, 
+        #ffffff 0%,
+        #ffffff 50vh,
+        #4a7496 50vh,
+        #4a7496 100%
+    );
+}
+
+.scene {
+    perspective: 1500px;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-style: preserve-3d;
+}
+
+.water {
+    position: absolute;
+    width: 2000px;
+    height: 400px;
+    background: linear-gradient(180deg, #4a7496, #385b75);
+    bottom: 50vh; /* Change from -200px to 50vh to move to middle of screen */
+    left: -600px;
+    transform: translateZ(-100px);
+}
+
+.canoe {
+    position: absolute;
+    width: 120px;
+    height: 40px;
+    bottom: calc(50vh + 100px); /* Adjust to be above the new water line */
+    left: 100px;
+    transform-style: preserve-3d;
+    cursor: move;
+    transition: left 0.1s linear, bottom 0.1s linear;
+    z-index: 1;
+}
+
+.canoe-body {
+    position: absolute;
+    width: 100%;
+    height: 30px;
+    bottom: 0;
+    background: linear-gradient(45deg, #FFD700, #FFFF00);
+    border: 2px solid #5c5c5c;
+    border-radius: 40% 40% 0 0;
+    transform: translateZ(10px);
+}
+
+.paddler {
+    position: absolute;
+    width: 30px;
+    height: 50px;
+    bottom: 20px;
+    left: 45px;
+    transform: translateZ(20px);
+}
+
+.head {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #d4a67e;
+    border: 2px solid #5c5c5c;
+    border-radius: 50%;
+    top: 0;
+    left: 5px;
+}
+
+.body {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #827f7d;
+    border: 2px solid #5c5c5c;
+    border-radius: 5px;
+    top: 20px;
+    animation: rowing 2s infinite;
+}
+
+.paddle {
+    position: absolute;
+    width: 60px;
+    height: 6px;
+    background: #6b6866;
+    border: 1px solid #5c5c5c;
+    top: 30px;
+    left: -15px;
+    transform-origin: center;
+    animation: paddling 2s infinite;
+}
+
+.rock, .log, .pole {
+    position: absolute;
+    transform-style: preserve-3d;
+    pointer-events: none;
+}
+
+.score-display {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    color: white;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.game-over {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: white;  /* Changed from red to white */
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 2000;
+    display: none;
+}
+
+.island {
+    position: absolute;
+    bottom: calc(50vh + 80px); /* Position above water line */
+    left: 50%;
+    transform: translateX(-50%) translateZ(-50px);
+    display: none; /* Hidden by default */
+    transition: all 1s ease-in;
+}
+
+.palm-tree {
+    transform-origin: bottom;
+    animation: palmSway 3s ease-in-out infinite alternate;
+}
+
+@keyframes palmSway {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+}
+
+.victory {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: gold;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 2000;
+    display: none;
+}
+
+@keyframes rowing {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+}
+
+@keyframes paddling {
+    0%, 100% { transform: rotate(-30deg); }
+    50% { transform: rotate(30deg); }
+}
+
+@keyframes rockPath {
+    0% { transform: translate(120vw, var(--start-y)) translateZ(var(--z-index)) rotate(var(--rotation)); }
+    100% { transform: translate(-20vw, var(--end-y)) translateZ(var(--z-index)) rotate(var(--rotation)); }
+}
+
+@keyframes celebrate {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-20px) rotate(-5deg); }
+    75% { transform: translateY(-20px) rotate(5deg); }
+}
+
+.celebrating .paddler {
+    animation: celebrate 1s infinite;
+}
+
+.cloud {
+    position: absolute;
+    opacity: 0.8;
+    animation: cloudFloat linear infinite;
+    transform: translateZ(-200px);
+}
+
+.seagull {
+    position: absolute;
+    opacity: 0.7;
+    animation: seagullFloat linear infinite;
+    transform: translateZ(-150px);
+}
+
+@keyframes cloudFloat {
+    from { transform: translateX(120vw) translateZ(-200px); }
+    to { transform: translateX(-20vw) translateZ(-200px); }
+}
+
+@keyframes seagullFloat {
+    from { transform: translateX(120vw) translateZ(-150px); }
+    to { transform: translateX(-20vw) translateZ(-150px); }
+}
+
+@keyframes wingFlap {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-20deg); }
+}
+
+/* Update the jump animation to be bigger */
+@keyframes jump {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-200px) translateZ(100px); } /* Increased height and depth */
+}
+
+.canoe.jumping {
+    animation: jump 1s cubic-bezier(0.5, 0, 0.25, 1); /* Adjusted timing function and duration */
+    pointer-events: none; /* Prevent dragging while jumping */
+}
+
+.welcome-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    z-index: 3000;
+    max-width: 80%;
+    width: 500px;
+}
+
+.welcome-modal h2 {
+    color: #90EE90;
+    margin-bottom: 20px;
+}
+
+.welcome-modal .scoring {
+    text-align: left;
+    margin: 20px 0;
+    line-height: 1.6;
+}
+
+.start-button {
+    background: #90EE90;
+    border: none;
+    padding: 10px 30px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s;
+}
+
+.start-button:hover {
+    background: #7ACC7A;
+}
+
+/* Add mobile-friendly styles */
+@media (max-width: 768px) {
+    .welcome-modal {
+        width: 90%;
+        padding: 20px;
+    }
+    
+    .start-button {
+        padding: 15px 30px; /* Larger touch target */
+        font-size: 20px;
+    }
+    
+    .score-display {
+        font-size: 20px;
+        padding: 15px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="welcome-modal">
+    <h2>River Adventure Game Instructions</h2>
+    <p>Navigate your canoe through the river, collecting points and avoiding obstacles!</p>
+    
+    <div class="scoring">
+        <strong>Scoring System:</strong><br>
+        • Small Rocks: +10 points<br>
+        • Large Rocks: +50 points<br>
+        • Hitting Logs: -40 points<br>
+        • Hitting Poles: -30 points (3 hits = Game Over)<br>
+        • Reach 1000 points to find the Hidden Island!
+    </div>
+    
+    <p><strong>Controls:</strong><br>
+    • Drag canoe with finger to move<br>
+    • Double tap screen to jump over obstacles<br>
+    • Time your jumps carefully - they have a 2 second cooldown!</p>
+    
+    <button class="start-button">Start Adventure!</button>
+</div>
+
+<div class="score-display">Score: 0<br>
+    <span style="font-size: 16px; color: #90EE90">
+        Jump Ready (Space or Mouse Wheel)
+    </span>
+</div>
+<div class="game-over">GAME OVER!<br>Final Score: 0</div>
+<div class="island">
+    <svg width="300" height="200" viewBox="0 0 300 200">
+        <!-- Island base -->
+        <path d="M20,150 Q150,100 280,150 L280,180 Q150,160 20,180 Z" 
+              fill="#c2b280" stroke="#8b7355" stroke-width="2"/>
+        
+        <!-- Palm Trees -->     
+        <!-- Palm Tree 1 -->
+        <g class="palm-tree">
+            <path d="M120,120 L150,60 L180,120" 
+                  fill="#228b22" stroke="#006400" stroke-width="2"/>
+            <path d="M145,120 L150,80 L155,120"
+                  fill="#8b4513" stroke="#654321" stroke-width="2"/>
+        </g>
+        
+        <!-- Palm Tree 2 -->
+        <g class="palm-tree">
+            <path d="M90,130 L120,80 L150,130" 
+                  fill="#228b22" stroke="#006400" stroke-width="2"/>
+            <path d="M115,130 L120,90 L125,130"
+                  fill="#8b4513" stroke="#654321" stroke-width="2"/>
+        </g>
+        
+        <!-- Palm Tree 3 -->
+        <g class="palm-tree">
+            <path d="M150,130 L180,80 L210,130" 
+                  fill="#228b22" stroke="#006400" stroke-width="2"/>
+            <path d="M175,130 L180,90 L185,130"
+                  fill="#8b4513" stroke="#654321" stroke-width="2"/>
+        </g>
+    </svg>
+</div>
+<div class="victory">VICTORY!<br>You've reached the island!<br>Score: 0</div>
+<audio id="splashSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2563/2563-preview.mp3" type="audio/mp3">
+</audio>
+
+<audio id="jumpSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/997/997-preview.mp3" type="audio/mp3">
+</audio>
+
+<audio id="windSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/148/148-preview.mp3" type="audio/mp3">
+</audio>
+
+<audio id="victorySound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" type="audio/mp3">
+</audio>
+
+<audio id="gameOverSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/1430/1430-preview.mp3" type="audio/mp3">
+</audio>
+
+<audio id="collectSound" preload="auto">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" type="audio/mp3">
+</audio>
+
+<div class="scene">
+    <div class="water">
+        <div class="wave" style="width: 60%; top: 20px;"></div>
+        <div class="wave" style="width: 80%; top: 50px;"></div>
+        <div class="wave" style="width: 70%; top: 80px;"></div>
+    </div>
+    
+    <div class="canoe">
+        <div class="canoe-body"></div>
+        <div class="paddler">
+            <div class="head"></div>
+            <div class="body"></div>
+            <div class="paddle"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canoe = document.querySelector('.canoe');
+let isDraggingCanoe = false;
+let score = 0;
+let poleHits = 0;
+let gameActive = false; // Game is paused until start button is clicked
+const scoreDisplay = document.querySelector('.score-display');
+const gameOverDisplay = document.querySelector('.game-over');
+const island = document.querySelector('.island');
+const victoryDisplay = document.querySelector('.victory');
+const VICTORY_SCORE = 1000; // Score needed to reveal the island
+let gameSpeed = 1;
+let hasWon = false;
+
+// Add audio elements
+const splashSound = document.getElementById('splashSound');
+const jumpSound = document.getElementById('jumpSound');
+const windSound = document.getElementById('windSound');
+const victorySound = document.getElementById('victorySound');
+const gameOverSound = document.getElementById('gameOverSound');
+const collectSound = document.getElementById('collectSound');
+
+// Add jumping variables
+let isJumping = false;
+let canJump = true;
+const JUMP_COOLDOWN = 2000; // 2 seconds cooldown between jumps
+
+const welcomeModal = document.querySelector('.welcome-modal');
+const startButton = document.querySelector('.start-button');
+let gameStarted = false;
+
+function endGame() {
+    if (hasWon) return; // Don't end game if player has won
+    gameActive = false;
+    gameOverSound.play();
+    gameOverDisplay.style.display = 'block';
+    gameOverDisplay.innerHTML = `GAME OVER!<br>Final Score: ${score}`;
+    document.querySelectorAll('.rock, .log, .pole').forEach(element => {
+        element.remove();
+    });
+}
+
+startButton.addEventListener('click', () => {
+    welcomeModal.style.display = 'none';
+    gameActive = true;
+    gameStarted = true;
+    // Start the wind sound only after game starts
+    windSound.volume = 0.3;
+    windSound.loop = true;
+    windSound.play();
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDraggingCanoe && gameActive) {
+        const scene = document.querySelector('.scene');
+        const sceneRect = scene.getBoundingClientRect();
+        const x = e.clientX - sceneRect.left - 60;
+        const y = sceneRect.bottom - e.clientY - 20;
+        
+        const minX = -200;
+        const maxX = 800;
+        const minY = 50;
+        const maxY = 250;
+        
+        const boundedX = Math.max(minX, Math.min(maxX, x));
+        const boundedY = Math.max(minY, Math.min(maxY, y));
+        
+        canoe.style.left = `${boundedX}px`;
+        canoe.style.bottom = `${boundedY}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDraggingCanoe = false;
+    canoe.style.transition = 'left 0.1s linear, bottom 0.1s linear';
+});
+
+canoe.addEventListener('mousedown', (e) => {
+    isDraggingCanoe = true;
+    canoe.style.transition = 'none';
+    e.preventDefault();
+});
+
+// Add touch controls
+canoe.addEventListener('touchstart', (e) => {
+    isDraggingCanoe = true;
+    canoe.style.transition = 'none';
+    e.preventDefault();
+});
+
+document.addEventListener('touchmove', (e) => {
+    if (isDraggingCanoe && gameActive) {
+        const touch = e.touches[0];
+        const scene = document.querySelector('.scene');
+        const sceneRect = scene.getBoundingClientRect();
+        const x = touch.clientX - sceneRect.left - 60;
+        const y = sceneRect.bottom - touch.clientY - 20;
+        
+        const minX = -200;
+        const maxX = 800;
+        const minY = 50;
+        const maxY = 250;
+        
+        const boundedX = Math.max(minX, Math.min(maxX, x));
+        const boundedY = Math.max(minY, Math.min(maxY, y));
+        
+        canoe.style.left = `${boundedX}px`;
+        canoe.style.bottom = `${boundedY}px`;
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('touchend', () => {
+    isDraggingCanoe = false;
+    canoe.style.transition = 'left 0.1s linear, bottom 0.1s linear';
+});
+
+// Add double tap to jump
+let lastTap = 0;
+document.addEventListener('touchend', (e) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    if (tapLength < 500 && tapLength > 0 && gameActive && !isJumping && canJump) {
+        jump();
+        e.preventDefault();
+    }
+    lastTap = currentTime;
+});
+
+// Add space bar event listener
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && gameActive && !isJumping && canJump) {
+        e.preventDefault(); // Prevent page scrolling
+        jump();
+    }
+});
+
+// Add wheel event listener
+document.addEventListener('wheel', (e) => {
+    if (gameActive && !isJumping && canJump) {
+        e.preventDefault(); // Prevent page scrolling
+        jump();
+    }
+});
+
+// Update the jump timing in the jump function
+function jump() {
+    if (!canJump || isJumping) return;
+    
+    isJumping = true;
+    canJump = false;
+    canoe.classList.add('jumping');
+    jumpSound.play();
+    
+    // Extend invulnerability time to match new jump duration
+    setTimeout(() => {
+        isJumping = false;
+        canoe.classList.remove('jumping');
+        splashSound.play();
+    }, 1000); // Match new animation duration
+    
+    // Add cooldown for jump ability
+    setTimeout(() => {
+        canJump = true;
+        updateScoreDisplay(); // Update score display after cooldown
+    }, JUMP_COOLDOWN);
+}
+
+function checkCollision(element) {
+    if (hasWon || isJumping) return false; // No collisions while jumping
+    const canoeRect = canoe.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    
+    return !(canoeRect.right < elementRect.left || 
+             canoeRect.left > elementRect.right || 
+             canoeRect.bottom < elementRect.top || 
+             canoeRect.top > elementRect.bottom);
+}
+
+function updateScoreDisplay() {
+    scoreDisplay.innerHTML = `Score: ${score}`;
+}
+
+// Update all places where score is updated to use the new function
+function updateGameSpeed() {
+    if (score >= 500) {
+        gameSpeed = 1.5;
+    }
+    if (score >= 1000) {
+        gameSpeed = 2;
+    }
+    if (score >= 1500) {
+        gameSpeed = 2.5;
+    }
+}
+
+// Modify the checkVictory function
+function checkVictory() {
+    if (score >= VICTORY_SCORE && !hasWon && poleHits < 3) {
+        hasWon = true;
+        gameActive = false;
+        island.style.display = 'block';
+        victorySound.play();
+        
+        // Move canoe to island
+        setTimeout(() => {
+            canoe.style.transition = 'all 2s ease-in';
+            canoe.style.left = '50%';
+            canoe.style.bottom = '150px';
+            canoe.style.transform = 'translateX(-50%)';
+            
+            // Start celebration
+            setTimeout(() => {
+                canoe.classList.add('celebrating');
+                victoryDisplay.style.display = 'block';
+                victoryDisplay.innerHTML = `VICTORY!<br>You've reached the island!<br>Score: ${score}`;
+                
+                // Remove all obstacles
+                document.querySelectorAll('.rock, .log, .pole').forEach(element => {
+                    element.remove();
+                });
+            }, 2000);
+        }, 500);
+    }
+}
+
+// Update collision checks in createPole
+function createPole() {
+    if (!gameActive || score < 600) return;
+    
+    const pole = document.createElement('div');
+    pole.className = 'pole';
+    
+    const height = Math.random() * 100 + 200;
+    const startY = Math.random() * 40 + 10;
+    const endY = Math.random() * 40 + 10;
+    const duration = (Math.random() * 4 + 6) / gameSpeed;
+    const zIndex = Math.random() * 200 - 100;
+    
+    pole.innerHTML = `
+        <svg width="30" height="${height}" viewBox="0 0 30 ${height}">
+            <rect x="5" y="0" width="20" height="${height}" 
+                  fill="#8B4513" 
+                  stroke="#654321" 
+                  stroke-width="2"/>
+            <rect x="0" y="${height-30}" width="30" height="30" 
+                  fill="#654321" 
+                  stroke="#3D2B1F" 
+                  stroke-width="2"/>
+        </svg>
+    `;
+    
+    pole.style.setProperty('--start-y', `${startY}vh`);
+    pole.style.setProperty('--end-y', `${endY}vh`);
+    pole.style.setProperty('--rotation', '0deg');
+    pole.style.setProperty('--z-index', `${zIndex}px`);
+    pole.style.animation = `rockPath ${duration}s linear`;
+    
+    let collided = false;
+    
+    const checkInterval = setInterval(() => {
+        if (checkCollision(pole) && !collided && gameActive) {
+            collided = true;
+            score = Math.max(0, score - 30);
+            splashSound.play();
+            updateScoreDisplay();
+            if (poleHits >= 3) {
+                endGame();
+            }
+            updateGameSpeed();
+        }
+        checkVictory(); // Add this line
+    }, 100);
+    
+    document.querySelector('.scene').appendChild(pole);
+    
+    pole.addEventListener('animationend', () => {
+        clearInterval(checkInterval);
+        pole.remove();
+    });
+}
+
+function createRock() {
+    if (!gameActive) return;
+    const rock = document.createElement('div');
+    rock.className = 'rock';
+    
+    const size = Math.random() * 60 + 20;
+    const startY = Math.random() * 60 + 20;
+    const endY = Math.random() * 60 + 20;
+    const rotation = Math.random() * 360;
+    const duration = (Math.random() * 5 + 8) / gameSpeed;
+    const zIndex = Math.random() * 200 - 100;
+    
+    rock.innerHTML = `
+        <svg width="${size}" height="${size}" viewBox="0 0 100 100">
+            <path d="M20,80 L40,20 L60,10 L80,30 L90,70 L70,90 L30,85 Z" 
+                  fill="${score >= 500 ? '#' + Math.floor(Math.random()*16777215).toString(16) : '#696969'}" 
+                  stroke="#404040" 
+                  stroke-width="4"/>
+            <path d="M40,20 L60,25 L70,60" 
+                  fill="none" 
+                  stroke="#404040" 
+                  stroke-width="2"/>
+        </svg>
+    `;
+    
+    rock.style.setProperty('--start-y', `${startY}vh`);
+    rock.style.setProperty('--end-y', `${endY}vh`);
+    rock.style.setProperty('--rotation', `${rotation}deg`);
+    rock.style.setProperty('--z-index', `${zIndex}px`);
+    rock.style.animation = `rockPath ${duration}s linear`;
+    
+    let scored = false;
+    
+    const checkInterval = setInterval(() => {
+        if (checkCollision(rock) && !scored && gameActive) {
+            scored = true;
+            const points = size < 50 ? 10 : 50;
+            score += points;
+            collectSound.play(); // Add this line to play collection sound
+            updateScoreDisplay();
+            updateGameSpeed();
+            checkVictory(); // Add this line
+        }
+    }, 100);
+    
+    document.querySelector('.scene').appendChild(rock);
+    
+    rock.addEventListener('animationend', () => {
+        clearInterval(checkInterval);
+        rock.remove();
+    });
+}
+
+function createLog() {
+    if (!gameActive) return;
+    const log = document.createElement('div');
+    log.className = 'log';
+    
+    const width = Math.random() * 100 + 100;
+    const height = 30;
+    const startY = Math.random() * 60 + 20;
+    const endY = Math.random() * 60 + 20;
+    const rotation = Math.random() * 360;
+    const duration = (Math.random() * 5 + 8) / gameSpeed;
+    const zIndex = Math.random() * 200 - 100;
+    
+    log.innerHTML = `
+        <svg width="${width}" height="${height}" viewBox="0 0 200 30">
+            <path d="M10,15 L190,15 C190,15 200,5 190,5 L10,5 C0,5 10,15 10,15 Z" 
+                  fill="${score >= 500 ? '#' + Math.floor(Math.random()*16777215).toString(16) : '#8B4513'}"/>
+            <path d="M10,15 L190,15 C190,15 200,25 190,25 L10,25 C0,25 10,15 10,15 Z" 
+                  fill="#654321"/>
+            <path d="M20,5 L180,5 M20,25 L180,25" 
+                  stroke="#3D2B1F" 
+                  stroke-width="2" 
+                  stroke-linecap="round"/>
+        </svg>
+    `;
+    
+    log.style.setProperty('--start-y', `${startY}vh`);
+    log.style.setProperty('--end-y', `${endY}vh`);
+    log.style.setProperty('--rotation', `${rotation}deg`);
+    log.style.setProperty('--z-index', `${zIndex}px`);
+    log.style.animation = `rockPath ${duration}s linear`;
+    
+    let collided = false;
+    
+    const checkInterval = setInterval(() => {
+        if (checkCollision(log) && !collided && gameActive) {
+            collided = true;
+            score = Math.max(0, score - 40);
+            splashSound.play(); // Add splash sound effect when hitting log
+            updateScoreDisplay();
+            updateGameSpeed();
+        }
+    }, 100);
+    
+    document.querySelector('.scene').appendChild(log);
+    
+    log.addEventListener('animationend', () => {
+        clearInterval(checkInterval);
+        log.remove();
+    });
+}
+
+function createCloud() {
+    if (!gameActive) return;
+    const cloud = document.createElement('div');
+    cloud.className = 'cloud';
+    
+    const width = Math.random() * 100 + 150;
+    const height = width * 0.6;
+    
+    cloud.innerHTML = `
+        <svg width="${width}" height="${height}" viewBox="0 0 100 60">
+            <path d="M10,40 Q20,50 30,40 Q40,30 50,40 Q60,50 70,40 Q80,30 90,40 Q95,45 90,50 Q85,55 70,50 Q50,60 30,50 Q15,55 10,40"
+                  fill="rgba(255,255,255,0.8)"
+                  stroke="rgba(255,255,255,0.3)"
+                  stroke-width="2"/>
+        </svg>
+    `;
+    
+    // Changed to only use top 25% of screen
+    cloud.style.top = Math.random() * 25 + 5 + 'vh';
+    cloud.style.animation = `cloudFloat ${Math.random() * 20 + 30}s linear infinite`;
+    
+    document.querySelector('.scene').appendChild(cloud);
+}
+
+function createSeagull() {
+    if (!gameActive) return;
+    const seagull = document.createElement('div');
+    seagull.className = 'seagull';
+    
+    const wingSpan = Math.random() * 30 + 30;
+    
+    seagull.innerHTML = `
+        <svg width="${wingSpan}" height="${wingSpan * 0.5}" viewBox="0 0 60 30">
+            <g class="wings" style="animation: wingFlap 1s infinite ease-in-out">
+                <path d="M30,15 Q45,5 60,15" 
+                      fill="none" 
+                      stroke="white" 
+                      stroke-width="2"/>
+                <path d="M30,15 Q15,5 0,15" 
+                      fill="none" 
+                      stroke="white" 
+                      stroke-width="2"/>
+            </g>
+            <circle cx="30" cy="15" r="2" fill="white"/>
+        </svg>
+    `;
+    
+    // Changed to only use top 35% of screen
+    seagull.style.top = Math.random() * 35 + 5 + 'vh';
+    seagull.style.animation = `seagullFloat ${Math.random() * 15 + 20}s linear infinite`;
+    
+    document.querySelector('.scene').appendChild(seagull);
+}
+
+setInterval(() => {
+    if (Math.random() > 0.5) createRock();
+}, 2000 / gameSpeed);
+
+setInterval(() => {
+    if (Math.random() > 0.5) createLog();
+}, 3000 / gameSpeed);
+
+setInterval(() => {
+    if (Math.random() > 0.7) createPole();
+}, 4000 / gameSpeed);
+
+setInterval(() => {
+    if (Math.random() > 0.7) createCloud();
+}, 10000);
+
+setInterval(() => {
+    if (Math.random() > 0.6) createSeagull();
+}, 8000);
+
+for(let i = 0; i < 5; i++) {
+    setTimeout(createRock, i * 500);
+}
+
+for(let i = 0; i < 3; i++) {
+    setTimeout(() => {
+        createCloud();
+        createSeagull();
+    }, i * 1000);
+}
+
+// Initial score display
+updateScoreDisplay();
+</script>
+</body></html>
